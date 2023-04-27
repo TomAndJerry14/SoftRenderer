@@ -30,6 +30,8 @@ namespace SoftRenderer
             string path = Application.dataPath + "/head.txt";
             Object obj = LoadObj(path);
             Draw.DrawObj(renderer, obj);
+            Draw.DrawTriangle(renderer, new Vector2(10, 10), new Vector2(100, 10), new Vector2(50, 50), Color.red);
+            Draw.DrawTriangle(renderer, new Vector2(78, 90), new Vector2(20, 90), new Vector2(50, 50), Color.white);
 
             renderer.Apply();
         }

@@ -135,7 +135,6 @@ namespace SoftRenderer
             texture_vertices = _texture_vertices.ToArray();
             normals = _normals.ToArray();
             face_vertices = _face_vertices.ToArray();
-            Debug.Log(face_vertices.Length,"f L");
             face_texture_vertices = _face_texture_vertices.ToArray();
             face_normal_vertices = _face_normal_vertices.ToArray();
         }
