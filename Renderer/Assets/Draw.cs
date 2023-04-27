@@ -147,6 +147,8 @@ namespace SoftRenderer
                 Vector2 pos0_b = new Vector2();
                 Vector2 pos1_b = new Vector2();
                 Vector2 pos2_b = pos0;
+
+                //todo
             }
         }
 
