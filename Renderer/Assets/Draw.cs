@@ -1,4 +1,5 @@
-﻿using System;
+﻿using Cysharp.Threading.Tasks;
+using System;
 using UnityEngine;
 
 
@@ -20,6 +21,7 @@ namespace SoftRenderer
 
         public static void DrawPixel(Texture2D texture, int x0, int y0, Color color)
         {
+            UniTask.DelayFrame(10);
             texture.SetPixel(x0, y0, color);
         }
 
@@ -58,67 +60,42 @@ namespace SoftRenderer
         {
             var fv = obj.face_vertices;
             int len = fv.Length;
+
             for (int i = 0; i < len; i++)
             {
-                Vector2 p1 = WorldPos2ScreenPos(obj.vertices[fv[i][0] - 1]);
-                Vector2 p2 = WorldPos2ScreenPos(obj.vertices[fv[i][1] - 1]);
-                Vector2 p3 = WorldPos2ScreenPos(obj.vertices[fv[i][2] - 1]);
+                Vector3[] worldPos = new Vector3[3]
+                {
+                      obj.vertices[fv[i][0] - 1],
+                      obj.vertices[fv[i][1] - 1],
+                      obj.vertices[fv[i][2] - 1],
+                };
 
-                //DrawLine(texture, (int)p1.x, (int)p1.y, (int)p2.x, (int)p2.y, Color.white);
-                //DrawLine(texture, (int)p2.x, (int)p2.y, (int)p3.x, (int)p3.y, Color.white);
-                //DrawLine(texture, (int)p3.x, (int)p3.y, (int)p1.x, (int)p1.y, Color.white);
-                //DrawTriangle(texture, p1, p2, p3, Color.white);
+                Vector2[] screenPos = new Vector2[3]
+                {
+                    WorldPos2ScreenPos(worldPos[0]),
+                    WorldPos2ScreenPos(worldPos[1]),
+                    WorldPos2ScreenPos(worldPos[2]),
+                };
+
+                Vector3 normal = Vector3.Cross(worldPos[2] - worldPos[0], worldPos[1] - worldPos[0]);
+                normal.Normalize();
+                Vector3 lightDir = Quaternion.Euler(SoftRenderer.light.rot.x, SoftRenderer.light.rot.y, SoftRenderer.light.rot.z) * Vector3.forward;
+                lightDir.Normalize();
+                float intensity = Vector3.Dot(lightDir, normal);
+                Debug.Log(i == 0, intensity);
+
+                if (intensity > 0)
+                    DrawTriangle(texture, screenPos[0], screenPos[1], screenPos[2], new Color(intensity, intensity, intensity, 1));
             }
-
         }
 
         public static void DrawTriangle(Texture2D texture, Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
         {
             if (pos0.y == pos1.y && pos1.y == pos2.y)
             {
+                Debug.Log("============");
                 return;
             }
-            //else if (pos0.y == pos1.y || pos1.y == pos2.y || pos0.y == pos2.y)
-            //{
-
-            //}
-            //else
-            //{
-            //    if (pos0.y > pos1.y)
-            //        Swap(ref pos0, ref pos1);
-            //    if (pos0.y > pos2.y)
-            //        Swap(ref pos0, ref pos2);
-            //    if (pos1.x > pos2.x)
-            //        Swap(ref pos1, ref pos2);
-
-            //    int totalHeight = (int)pos2.y - (int)pos0.y;
-            //    for (int i = 0; i < totalHeight; i++)
-            //    {
-            //        bool bottom = i >= pos1.y - pos0.y;
-            //        float halfHegiht = bottom ? pos1.y - pos0.y : pos2.y - pos1.y;
-            //        float k = (float)i / totalHeight;
-            //        float k1 = (float)i / halfHegiht;
-            //        Vector2 A = pos0 + (pos2 - pos0) * k;
-            //        Debug.Log(i);
-            //        Debug.Log(halfHegiht);
-            //        Debug.Log(k1);
-            //        Debug.Log("tt", ((pos1 - pos0) * k1).x);
-            //        Vector2 B = bottom ? pos0 + (pos1 - pos0) * k1 : pos1 + (pos2 - pos1) * k1;
-            //        Debug.Log(A.x, B.x);
-            //        if (A.x > B.x)
-            //        {
-            //            Swap(ref A, ref B);
-            //        }
-            //        for (int j = (int)A.x; j <= (int)B.x; j++)
-            //        {
-            //            Debug.Log(j, (int)pos0.y + i);
-            //            DrawPixel(texture, j, (int)pos0.y + i, color);
-            //        }
-            //        Debug.Log("==========");
-            //    }
-            //}
-
-
             if (pos0.y > pos1.y)
                 Swap(ref pos0, ref pos1);
             if (pos0.y > pos2.y)
@@ -139,16 +116,35 @@ namespace SoftRenderer
             }
             else
             {
+                float CulculateX(float x1, float x2, float y1, float y2, float y)
+                {
+                    if (y2 == y1)
+                    {
+                        throw new Exception($"不能为直线,x1:{x1},x2:{x2},y1:{y1},y2:{y2}");
+                    }
+                    if (x2 == x1)
+                        return x1;
+                    float x = (x2 - x1) / (y2 - y1) * (y - y1) + x1;
+                    return x;
+                }
                 //拆分两个三角形
                 int totalHeight = (int)(pos2.y - pos0.y);
-                Vector2 centerPos = new Vector2((pos2.x - pos0.x) * (pos1.y / totalHeight), pos1.y);
-                
-                //往下一格
-                Vector2 pos0_b = new Vector2();
-                Vector2 pos1_b = new Vector2();
-                Vector2 pos2_b = pos0;
+                Vector2 centerPos = new Vector2(CulculateX(pos0.x, pos2.x, pos0.y, pos2.y, pos1.y), pos1.y);
 
-                //todo
+                //上三角形
+                Vector2 pos2_t = pos2;
+                Vector2 pos1_t = centerPos.x > pos1.x ? centerPos : pos1;
+                Vector2 pos0_t = centerPos.x > pos1.x ? pos1 : centerPos;
+                DrawTriangleInternal(texture, pos0_t, pos1_t, pos2_t, color);
+
+                //下三角形，需要往下一格
+                Vector2 pos2_b = pos0;//最低点
+                int y = (int)pos1.y - 1;
+                Vector2 pos0_b = new Vector2(CulculateX(pos0_t.x, pos2_b.x, pos0_t.y, pos2_b.y, y), y);
+                Vector2 pos1_b = new Vector2(CulculateX(pos1_t.x, pos2_b.x, pos1_t.y, pos2_b.y, y), y);
+                if (pos0_b.x > pos1_b.x)
+                    Swap(ref pos0_b, ref pos1_b);
+                DrawTriangleInternal(texture, pos0_b, pos1_b, pos2_b, color);
             }
         }
 
@@ -156,18 +152,19 @@ namespace SoftRenderer
         {
             if (pos0.y == pos1.y && pos1.y == pos2.y)
             {
+                DrawLine(texture, (int)Math.Min(Math.Min(pos0.x, pos1.x), pos2.x), (int)pos0.y, (int)Math.Max(Math.Max(pos0.x, pos1.x), pos2.x), (int)pos0.y, color);
                 return;
             }
 
             int totalHeight = (int)pos2.y - (int)pos0.y;
-            for (int i = 0; i < totalHeight; i++)
+            bool up = pos2.y >= pos0.y;
+            for (int i = 0; up ? i < totalHeight : i > totalHeight; i = (up ? i + 1 : i - 1))
             {
                 var t = (float)i / totalHeight;
                 Vector2 A = pos0 + (pos2 - pos0) * t;
                 Vector2 B = pos1 + (pos2 - pos1) * t;
                 for (int j = (int)A.x; j <= (int)B.x; j++)
                 {
-                    Debug.Log(j, (int)pos0.y + i);
                     DrawPixel(texture, j, (int)pos0.y + i, color);
                 }
             }
@@ -188,7 +185,6 @@ namespace SoftRenderer
                 Vector2 B = pos1 + (pos2 - pos1) * t;
                 for (int j = (int)A.x; j <= (int)B.x; j++)
                 {
-                    Debug.Log(j, (int)pos0.y + i);
                     DrawPixel(texture, j, (int)pos0.y + i, color);
                 }
             }
@@ -212,7 +208,7 @@ namespace SoftRenderer
         {
             Vector2 t = a;
             a = b;
-            a = t;
+            b = t;
         }
     }
 }

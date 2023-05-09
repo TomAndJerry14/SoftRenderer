@@ -59,8 +59,8 @@
     <Compile Include="Assets\Object.cs" />
     <Compile Include="Assets\Draw.cs" />
     <Compile Include="Assets\SoftRenderer.cs" />
-    <Compile Include="Assets\Vector3.cs" />
     <Compile Include="Assets\Debug.cs" />
+    <Compile Include="Assets\Light.cs" />
   </ItemGroup>
   <ItemGroup>
     <None Include="Assets\head.txt" />
@@ -671,6 +671,26 @@
     </Reference>
   </ItemGroup>
   <ItemGroup>
+    <ProjectReference Include="UniTask.TextMeshPro.csproj">
+      <Project>{F3DDB369-B117-A562-B12F-CF38B1BC59DC}</Project>
+      <Name>UniTask.TextMeshPro</Name>
+    </ProjectReference>
+    <ProjectReference Include="UniTask.DOTween.csproj">
+      <Project>{D7756D0E-00D9-A8BD-9299-29E7329A4474}</Project>
+      <Name>UniTask.DOTween</Name>
+    </ProjectReference>
+    <ProjectReference Include="UniTask.csproj">
+      <Project>{6AA890CA-DB60-F6D8-FFEB-4832890C4683}</Project>
+      <Name>UniTask</Name>
+    </ProjectReference>
+    <ProjectReference Include="UniTask.Addressables.csproj">
+      <Project>{F414428A-91CC-B245-AC46-C31EBA2DD428}</Project>
+      <Name>UniTask.Addressables</Name>
+    </ProjectReference>
+    <ProjectReference Include="UniTask.Linq.csproj">
+      <Project>{5EFEC37E-202D-55BD-9870-D3CAEAED2EF3}</Project>
+      <Name>UniTask.Linq</Name>
+    </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />
   <Target Name="GenerateTargetFrameworkMonikerAttribute" />
