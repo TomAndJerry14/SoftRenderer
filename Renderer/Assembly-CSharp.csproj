@@ -63,6 +63,7 @@
     <Compile Include="Assets\Light.cs" />
   </ItemGroup>
   <ItemGroup>
+    <None Include="Assets\cube.txt" />
     <None Include="Assets\head.txt" />
   </ItemGroup>
   <ItemGroup>

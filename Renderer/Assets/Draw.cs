@@ -7,12 +7,12 @@ namespace SoftRenderer
 {
     internal static class Draw
     {
-        public static Color[,] buffers = new Color[Screen.width, Screen.height];
+        public static Color[,] buffers = new Color[SoftRenderer.width, SoftRenderer.height];
         static Draw()
         {
-            for (int i = 0; i < Screen.width; i++)
+            for (int i = 0; i < SoftRenderer.width; i++)
             {
-                for (int j = 0; j < Screen.height; j++)
+                for (int j = 0; j < SoftRenderer.height; j++)
                 {
                     buffers[i, j] = Color.black;
                 }
@@ -85,9 +85,78 @@ namespace SoftRenderer
                 Debug.Log(i == 0, intensity);
 
                 if (intensity > 0)
-                    DrawTriangle(texture, screenPos[0], screenPos[1], screenPos[2], new Color(intensity, intensity, intensity, 1));
+                    DrawTriangle(texture, worldPos, new Color(intensity, intensity, intensity, 1));
             }
         }
+
+        private static Vector3 Barycentric(Vector3 pos0, Vector3 pos1, Vector3 pos2, Vector3 p)
+        {
+            Vector3[] s = new Vector3[3];
+            for (int i = 0; i <= 2; i++)
+            {
+                s[i].x = pos2[i] - pos0[i];
+                s[i].y = pos1[i] - pos0[i];
+                s[i].z = pos0[i] - p[i];
+            }
+            Vector3 u = Vector3.Cross(s[0], s[1]);
+
+            Debug.Log(u.x, u.y, u.z, "u");
+
+            //叉积第三位
+            if (Math.Abs(u.z) > 1e-2)
+            {
+                return new Vector3(1f - (u.x + u.y) / u.z, u.y / u.z, u.x / u.z);
+            }
+            return new Vector3(-1, 1, 1);
+        }
+        public static void DrawTriangle(Texture2D texture, Vector3[] points, Color color)
+        {
+            for (int i = 0; i < points.Length; i++)
+            {
+                points[i].x *= 100;
+                points[i].y *= 100;
+                points[i].x += 200;
+                points[i].y += 100;
+            }
+            Vector2 boxMin = new Vector2(float.MaxValue, float.MaxValue);
+            Vector2 boxMax = new Vector2();
+            Vector2 clamp = new Vector2(texture.width - 1, texture.height - 1);
+            for (int i = 0; i < 3; i++)
+            {
+                for (int j = 0; j < 2; j++)
+                {
+                    boxMin[j] = Math.Max(0f, Math.Min(boxMin[j], points[i][j]));
+                    boxMax[j] = Math.Min(clamp[j], Math.Max(boxMax[j], points[i][j]));
+                }
+            }
+
+            Vector3 p = new Vector3();
+            for (p.x = boxMin.x; p.x <= boxMax.x; p.x++)
+            {
+                for (p.y = boxMin.y; p.y <= boxMax.y; p.y++)
+                {
+                    var barycentric = Barycentric(points[0], points[1], points[2], p);
+
+                    if (barycentric.x < 0 || barycentric.y < 0 || barycentric.z < 0) { continue; }
+
+                    p.z = 0;
+                    for (int i = 0; i < 3; i++)
+                    {
+                        p.z += points[i].z * barycentric[i];
+                    }
+                    if (SoftRenderer.zBuffer[(int)p.x, (int)p.y] < p.z)
+                    {
+                        SoftRenderer.zBuffer[(int)p.x, (int)p.y] = p.z;
+                        DrawPixel(texture, (int)p.x, (int)p.y, color);
+                    }
+                    else
+                    {
+                        //Debug.Log(p.x, p.y, p.z);
+                    }
+                }
+            }
+        }
+
 
         public static void DrawTriangle(Texture2D texture, Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
         {

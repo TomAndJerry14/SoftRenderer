@@ -1,5 +1,4 @@
 using System.IO;
-using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using Light = SoftRenderer.Light;
@@ -8,6 +7,9 @@ namespace SoftRenderer
 {
     public class SoftRenderer : MonoBehaviour
     {
+        public static int width = 2340 / 4;
+        public static int height = 1080 / 4;
+
         public RawImage UI;
         public Texture2D renderer;
 
@@ -15,16 +17,28 @@ namespace SoftRenderer
         public GameObject rotLgiht;
 
         Object obj = null;
+
+        public static float[,] zBuffer;
+
         public void Start()
         {
             string path = Application.dataPath + "/head.txt";
             obj = LoadObj(path);
-            renderer = new Texture2D(Screen.width, Screen.height);
+            renderer = new Texture2D(width, height);
             UI.texture = renderer;
 
-            for (int i = 0; i < Screen.width; i++)
+            zBuffer = new float[width, height];
+            for (int i = 0; i < width; i++)
             {
-                for (int j = 0; j < Screen.height; j++)
+                for (int j = 0; j < height; j++)
+                {
+                    zBuffer[i, j] = float.MinValue;
+                }
+            }
+
+            for (int i = 0; i < width; i++)
+            {
+                for (int j = 0; j < height; j++)
                 {
                     Draw.DrawPixel(renderer, i, j, Color.black);
                 }
@@ -33,22 +47,25 @@ namespace SoftRenderer
             Draw.DrawLine(renderer, 20, 13, 40, 80, Color.red);
             Draw.DrawLine(renderer, 80, 40, 13, 20, Color.white);
 
-            for (int j = 0; j < Screen.width; j += 10)
+            for (int j = 0; j < width; j += 10)
             {
-                Draw.DrawLine(renderer, j, 0, j, Screen.height, Color.grey);
+                Draw.DrawLine(renderer, j, 0, j, height, Color.grey);
             }
-            for (int i = 0; i < Screen.height; i += 10)
+            for (int i = 0; i < height; i += 10)
             {
-                Draw.DrawLine(renderer, 0, i, Screen.width, i, Color.grey);
+                Draw.DrawLine(renderer, 0, i, width, i, Color.grey);
             }
 
             //Draw.DrawTriangle(renderer, new Vector2(10, 10), new Vector2(100, 10), new Vector2(50, 50), Color.red);
             //Draw.DrawTriangle(renderer, new Vector2(131, 90), new Vector2(20, 90), new Vector2(50, 50), Color.white);
-            Draw.DrawTriangle(renderer, new Vector2(200, 90), new Vector2(200, 200), new Vector2(150, 120), Color.yellow);
+            //Draw.DrawTriangle(renderer, new Vector2(200, 90), new Vector2(200, 200), new Vector2(150, 120), Color.yellow);
+
+            //Draw.DrawTriangle(renderer, new Vector3[] { new Vector2(10, 10), new Vector2(100, 10), new Vector2(50, 50) }, Color.red);
+            //Draw.DrawTriangle(renderer, new Vector3[] { new Vector2(131, 90), new Vector2(20, 90), new Vector2(50, 50) }, Color.white);
+            //Draw.DrawTriangle(renderer, new Vector3[] { new Vector2(200, 90), new Vector2(200, 200), new Vector2(150, 120) }, Color.yellow);
 
 
-
-            Draw.DrawObj(renderer, obj);
+            //Draw.DrawObj(renderer, obj);
 
             renderer.Apply();
         }
