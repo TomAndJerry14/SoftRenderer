@@ -21,7 +21,7 @@ namespace SoftRenderer
 
         public static void DrawPixel(Texture2D texture, int x0, int y0, Color color)
         {
-            UniTask.DelayFrame(10);
+            //UniTask.DelayFrame(10);
             texture.SetPixel(x0, y0, color);
         }
 
@@ -61,7 +61,7 @@ namespace SoftRenderer
             var fv = obj.face_vertices;
             int len = fv.Length;
 
-            for (int i = 0; i < len; i++)
+            for (int i = 0; i < len ; i++)
             {
                 Vector3[] worldPos = new Vector3[3]
                 {
@@ -79,13 +79,13 @@ namespace SoftRenderer
 
                 Vector3 normal = Vector3.Cross(worldPos[2] - worldPos[0], worldPos[1] - worldPos[0]);
                 normal.Normalize();
-                Vector3 lightDir = Quaternion.Euler(SoftRenderer.light.rot.x, SoftRenderer.light.rot.y, SoftRenderer.light.rot.z) * Vector3.forward;
+                Vector3 lightDir = -Vector3.forward;
                 lightDir.Normalize();
                 float intensity = Vector3.Dot(lightDir, normal);
-                Debug.Log(i == 0, intensity);
 
                 if (intensity > 0)
                     DrawTriangle(texture, worldPos, new Color(intensity, intensity, intensity, 1));
+                //DrawTriangle(texture, worldPos[0], worldPos[1], worldPos[2], new Color(intensity, intensity, intensity, 1));
             }
         }
 
@@ -100,8 +100,6 @@ namespace SoftRenderer
             }
             Vector3 u = Vector3.Cross(s[0], s[1]);
 
-            Debug.Log(u.x, u.y, u.z, "u");
-
             //叉积第三位
             if (Math.Abs(u.z) > 1e-2)
             {
@@ -113,10 +111,10 @@ namespace SoftRenderer
         {
             for (int i = 0; i < points.Length; i++)
             {
-                points[i].x *= 100;
-                points[i].y *= 100;
-                points[i].x += 200;
-                points[i].y += 100;
+                points[i].x *= 200;
+                points[i].y *= 200;
+                points[i].x += 500;
+                points[i].y += 500;
             }
             Vector2 boxMin = new Vector2(float.MaxValue, float.MaxValue);
             Vector2 boxMax = new Vector2();
@@ -125,8 +123,8 @@ namespace SoftRenderer
             {
                 for (int j = 0; j < 2; j++)
                 {
-                    boxMin[j] = Math.Max(0f, Math.Min(boxMin[j], points[i][j]));
-                    boxMax[j] = Math.Min(clamp[j], Math.Max(boxMax[j], points[i][j]));
+                    boxMin[j] = Math.Max(0f, (int)Math.Min(boxMin[j], points[i][j]));
+                    boxMax[j] = Math.Min((int)clamp[j], (int)Math.Max(boxMax[j], points[i][j]));
                 }
             }
 
@@ -144,7 +142,7 @@ namespace SoftRenderer
                     {
                         p.z += points[i].z * barycentric[i];
                     }
-                    if (SoftRenderer.zBuffer[(int)p.x, (int)p.y] < p.z)
+                    if (SoftRenderer.zBuffer[(int)p.x, (int)p.y] <= p.z)
                     {
                         SoftRenderer.zBuffer[(int)p.x, (int)p.y] = p.z;
                         DrawPixel(texture, (int)p.x, (int)p.y, color);
@@ -160,6 +158,16 @@ namespace SoftRenderer
 
         public static void DrawTriangle(Texture2D texture, Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
         {
+            for (int i = 0; i < 2; i++)
+            {
+                pos0[i]*= 200;
+                pos1[i] *= 200;
+                pos2[i] *= 200;
+                pos0[i] += 200;
+                pos1[i] += 200;
+                pos2[i] += 200;
+            }
+
             if (pos0.y == pos1.y && pos1.y == pos2.y)
             {
                 Debug.Log("============");
@@ -222,6 +230,7 @@ namespace SoftRenderer
             if (pos0.y == pos1.y && pos1.y == pos2.y)
             {
                 DrawLine(texture, (int)Math.Min(Math.Min(pos0.x, pos1.x), pos2.x), (int)pos0.y, (int)Math.Max(Math.Max(pos0.x, pos1.x), pos2.x), (int)pos0.y, color);
+                Debug.Log((int)Math.Min(Math.Min(pos0.x, pos1.x), pos2.x), (int)pos0.y, (int)Math.Max(Math.Max(pos0.x, pos1.x), pos2.x), (int)pos0.y);
                 return;
             }
 

@@ -7,8 +7,8 @@ namespace SoftRenderer
 {
     public class SoftRenderer : MonoBehaviour
     {
-        public static int width = 2340 / 4;
-        public static int height = 1080 / 4;
+        public static int width = 2340;
+        public static int height = 2340;
 
         public RawImage UI;
         public Texture2D renderer;
@@ -22,7 +22,7 @@ namespace SoftRenderer
 
         public void Start()
         {
-            string path = Application.dataPath + "/head.txt";
+            string path = Application.dataPath + "/head.obj";
             obj = LoadObj(path);
             renderer = new Texture2D(width, height);
             UI.texture = renderer;
@@ -43,18 +43,14 @@ namespace SoftRenderer
                     Draw.DrawPixel(renderer, i, j, Color.black);
                 }
             }
+
+
+
+
             Draw.DrawLine(renderer, 13, 20, 80, 40, Color.white);
             Draw.DrawLine(renderer, 20, 13, 40, 80, Color.red);
             Draw.DrawLine(renderer, 80, 40, 13, 20, Color.white);
 
-            for (int j = 0; j < width; j += 10)
-            {
-                Draw.DrawLine(renderer, j, 0, j, height, Color.grey);
-            }
-            for (int i = 0; i < height; i += 10)
-            {
-                Draw.DrawLine(renderer, 0, i, width, i, Color.grey);
-            }
 
             //Draw.DrawTriangle(renderer, new Vector2(10, 10), new Vector2(100, 10), new Vector2(50, 50), Color.red);
             //Draw.DrawTriangle(renderer, new Vector2(131, 90), new Vector2(20, 90), new Vector2(50, 50), Color.white);
@@ -65,7 +61,7 @@ namespace SoftRenderer
             //Draw.DrawTriangle(renderer, new Vector3[] { new Vector2(200, 90), new Vector2(200, 200), new Vector2(150, 120) }, Color.yellow);
 
 
-            //Draw.DrawObj(renderer, obj);
+            Draw.DrawObj(renderer, obj);
 
             renderer.Apply();
         }
@@ -76,13 +72,13 @@ namespace SoftRenderer
             return obj;
         }
 
-        float time = 0.5f;
+        float time = 1f;
         public void Update()
         {
             time -= Time.deltaTime;
             if (time <= 0)
             {
-                time = 0.5f;
+                time = 1f;
                 light.rot = rotLgiht.transform.localEulerAngles;
                 Draw.DrawObj(renderer, obj);
                 renderer.Apply();
