@@ -6,7 +6,7 @@ namespace SoftRenderer
     {
         public static void Log(bool condition, params object[] args)
         {
-            if (condition)
+            if (condition && args.Length > 0)
             {
                 string msg = "";
                 for (int i = 0; i < args.Length; i++)

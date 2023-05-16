@@ -5,11 +5,15 @@ using UnityEngine;
 
 namespace SoftRenderer
 {
-    internal static class Draw
+    internal class Draw
     {
         public static Color[,] buffers = new Color[SoftRenderer.width, SoftRenderer.height];
-        static Draw()
+
+        private Camera camera;
+
+        public Draw(Camera camera)
         {
+            this.camera = camera;
             for (int i = 0; i < SoftRenderer.width; i++)
             {
                 for (int j = 0; j < SoftRenderer.height; j++)
@@ -19,21 +23,20 @@ namespace SoftRenderer
             }
         }
 
-        public static void DrawPixel(Texture2D texture, int x0, int y0, Color color)
+        public void DrawPixel(int x0, int y0, Color color)
         {
-            //UniTask.DelayFrame(10);
-            texture.SetPixel(x0, y0, color);
+            camera.renderer.SetPixel(x0, y0, color);
         }
 
-        public static void DrawLine(Texture2D texture, int x0, int y0, int x1, int y1, Color color)
+        public void DrawLine(int x0, int y0, int x1, int y1, Color color)
         {
             if (x0 > x1)
-                DrawLineInternal(texture, x1, y1, x0, y0, color);
+                DrawLineInternal(x1, y1, x0, y0, color);
             else
-                DrawLineInternal(texture, x0, y0, x1, y1, color);
+                DrawLineInternal(x0, y0, x1, y1, color);
         }
 
-        private static void DrawLineInternal(Texture2D texture, int x0, int y0, int x1, int y1, Color color)
+        private void DrawLineInternal(int x0, int y0, int x1, int y1, Color color)
         {
             bool steep = false;
             if (Mathf.Abs(x1 - x0) < Mathf.Abs(y1 - y0))
@@ -49,47 +52,51 @@ namespace SoftRenderer
                 float t = (float)(x - x0) / (x1 - x0);
                 int y = (int)((y1 - y0) * t + y0);
                 if (steep)
-                    DrawPixel(texture, y, x, color);
+                    DrawPixel(y, x, color);
                 else
-                    DrawPixel(texture, x, y, color);
+                    DrawPixel(x, y, color);
 
             }
         }
 
-        public static void DrawObj(Texture2D texture, Object obj)
+        public void DrawObj(Object obj)
         {
             var fv = obj.face_vertices;
             int len = fv.Length;
 
-            for (int i = 0; i < len ; i++)
+            for (int i = 0; i < len; i++)
             {
+                Vector3[] oriPos = new Vector3[3];
+                for (int j = 0; j < 3; j++)
+                {
+                    oriPos[j] = obj.vertices[fv[i][j] - 1];
+                }
+
                 Vector3[] worldPos = new Vector3[3]
                 {
-                      obj.vertices[fv[i][0] - 1],
-                      obj.vertices[fv[i][1] - 1],
-                      obj.vertices[fv[i][2] - 1],
+                      camera.Matrix2CameraLocal(oriPos[0]),
+                      camera.Matrix2CameraLocal(oriPos[1]),
+                      camera.Matrix2CameraLocal(oriPos[2]),
                 };
 
-                Vector2[] screenPos = new Vector2[3]
-                {
-                    WorldPos2ScreenPos(worldPos[0]),
-                    WorldPos2ScreenPos(worldPos[1]),
-                    WorldPos2ScreenPos(worldPos[2]),
-                };
-
-                Vector3 normal = Vector3.Cross(worldPos[2] - worldPos[0], worldPos[1] - worldPos[0]);
+                Vector3 normal = Vector3.Cross(oriPos[2] - oriPos[0], oriPos[1] - oriPos[0]);
                 normal.Normalize();
                 Vector3 lightDir = -Vector3.forward;
                 lightDir.Normalize();
                 float intensity = Vector3.Dot(lightDir, normal);
 
+                for (int j = 0; j < 3; j++)
+                {
+                    worldPos[j] += new Vector3(SoftRenderer.width / 2, SoftRenderer.height / 2, 0);
+                }
+
                 if (intensity > 0)
-                    DrawTriangle(texture, worldPos, new Color(intensity, intensity, intensity, 1));
-                //DrawTriangle(texture, worldPos[0], worldPos[1], worldPos[2], new Color(intensity, intensity, intensity, 1));
+                    DrawTriangle(worldPos, new Color(intensity, intensity, intensity, 1));
+                //DrawTriangle( worldPos[0], worldPos[1], worldPos[2], new Color(intensity, intensity, intensity, 1));
             }
         }
 
-        private static Vector3 Barycentric(Vector3 pos0, Vector3 pos1, Vector3 pos2, Vector3 p)
+        private Vector3 Barycentric(Vector3 pos0, Vector3 pos1, Vector3 pos2, Vector3 p)
         {
             Vector3[] s = new Vector3[3];
             for (int i = 0; i <= 2; i++)
@@ -107,18 +114,11 @@ namespace SoftRenderer
             }
             return new Vector3(-1, 1, 1);
         }
-        public static void DrawTriangle(Texture2D texture, Vector3[] points, Color color)
+        public void DrawTriangle(Vector3[] points, Color color)
         {
-            for (int i = 0; i < points.Length; i++)
-            {
-                points[i].x *= 200;
-                points[i].y *= 200;
-                points[i].x += 500;
-                points[i].y += 500;
-            }
             Vector2 boxMin = new Vector2(float.MaxValue, float.MaxValue);
             Vector2 boxMax = new Vector2();
-            Vector2 clamp = new Vector2(texture.width - 1, texture.height - 1);
+            Vector2 clamp = new Vector2(camera.renderer.width - 1, camera.renderer.height - 1);
             for (int i = 0; i < 3; i++)
             {
                 for (int j = 0; j < 2; j++)
@@ -142,25 +142,22 @@ namespace SoftRenderer
                     {
                         p.z += points[i].z * barycentric[i];
                     }
-                    if (SoftRenderer.zBuffer[(int)p.x, (int)p.y] <= p.z)
+                    if (camera.zBuffer[(int)p.x, (int)p.y] <= p.z)
                     {
-                        SoftRenderer.zBuffer[(int)p.x, (int)p.y] = p.z;
-                        DrawPixel(texture, (int)p.x, (int)p.y, color);
+                        camera.zBuffer[(int)p.x, (int)p.y] = p.z;
+                        DrawPixel((int)p.x, (int)p.y, color);
                     }
-                    else
-                    {
-                        //Debug.Log(p.x, p.y, p.z);
-                    }
+
                 }
             }
         }
 
 
-        public static void DrawTriangle(Texture2D texture, Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
+        public void DrawTriangle(Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
         {
             for (int i = 0; i < 2; i++)
             {
-                pos0[i]*= 200;
+                pos0[i] *= 200;
                 pos1[i] *= 200;
                 pos2[i] *= 200;
                 pos0[i] += 200;
@@ -185,11 +182,11 @@ namespace SoftRenderer
             {
                 if (pos0.x > pos1.x)
                     Swap(ref pos0, ref pos1);
-                DrawTriangleInternal(texture, pos0, pos1, pos2, color);
+                DrawTriangleInternal(pos0, pos1, pos2, color);
             }
             else if (pos1.y == pos2.y)
             {
-                DrawTriangleInternal(texture, pos1, pos2, pos0, color);
+                DrawTriangleInternal(pos1, pos2, pos0, color);
             }
             else
             {
@@ -212,7 +209,7 @@ namespace SoftRenderer
                 Vector2 pos2_t = pos2;
                 Vector2 pos1_t = centerPos.x > pos1.x ? centerPos : pos1;
                 Vector2 pos0_t = centerPos.x > pos1.x ? pos1 : centerPos;
-                DrawTriangleInternal(texture, pos0_t, pos1_t, pos2_t, color);
+                DrawTriangleInternal(pos0_t, pos1_t, pos2_t, color);
 
                 //下三角形，需要往下一格
                 Vector2 pos2_b = pos0;//最低点
@@ -221,15 +218,15 @@ namespace SoftRenderer
                 Vector2 pos1_b = new Vector2(CulculateX(pos1_t.x, pos2_b.x, pos1_t.y, pos2_b.y, y), y);
                 if (pos0_b.x > pos1_b.x)
                     Swap(ref pos0_b, ref pos1_b);
-                DrawTriangleInternal(texture, pos0_b, pos1_b, pos2_b, color);
+                DrawTriangleInternal(pos0_b, pos1_b, pos2_b, color);
             }
         }
 
-        public static void DrawTriangleInternal(Texture2D texture, Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
+        public void DrawTriangleInternal(Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
         {
             if (pos0.y == pos1.y && pos1.y == pos2.y)
             {
-                DrawLine(texture, (int)Math.Min(Math.Min(pos0.x, pos1.x), pos2.x), (int)pos0.y, (int)Math.Max(Math.Max(pos0.x, pos1.x), pos2.x), (int)pos0.y, color);
+                DrawLine((int)Math.Min(Math.Min(pos0.x, pos1.x), pos2.x), (int)pos0.y, (int)Math.Max(Math.Max(pos0.x, pos1.x), pos2.x), (int)pos0.y, color);
                 Debug.Log((int)Math.Min(Math.Min(pos0.x, pos1.x), pos2.x), (int)pos0.y, (int)Math.Max(Math.Max(pos0.x, pos1.x), pos2.x), (int)pos0.y);
                 return;
             }
@@ -243,12 +240,12 @@ namespace SoftRenderer
                 Vector2 B = pos1 + (pos2 - pos1) * t;
                 for (int j = (int)A.x; j <= (int)B.x; j++)
                 {
-                    DrawPixel(texture, j, (int)pos0.y + i, color);
+                    DrawPixel(j, (int)pos0.y + i, color);
                 }
             }
         }
 
-        public static void DrawBottomTriangle(Texture2D texture, Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
+        public void DrawBottomTriangle(Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
         {
             if (pos0.y == pos1.y && pos1.y == pos2.y)
             {
@@ -263,7 +260,7 @@ namespace SoftRenderer
                 Vector2 B = pos1 + (pos2 - pos1) * t;
                 for (int j = (int)A.x; j <= (int)B.x; j++)
                 {
-                    DrawPixel(texture, j, (int)pos0.y + i, color);
+                    DrawPixel(j, (int)pos0.y + i, color);
                 }
             }
         }

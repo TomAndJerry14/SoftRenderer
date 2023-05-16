@@ -61,6 +61,7 @@
     <Compile Include="Assets\SoftRenderer.cs" />
     <Compile Include="Assets\Debug.cs" />
     <Compile Include="Assets\Light.cs" />
+    <Compile Include="Assets\Camera.cs" />
   </ItemGroup>
   <ItemGroup>
     <Reference Include="UnityEngine">

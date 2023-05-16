@@ -348,8 +348,10 @@ MonoBehaviour:
   m_Name: 
   m_EditorClassIdentifier: 
   UI: {fileID: 1058846547}
-  renderer: {fileID: 0}
   rotLgiht: {fileID: 1162570260}
+  cameraX: 1
+  cameraY: 1
+  cameraZ: 1
 --- !u!4 &1522861930
 Transform:
   m_ObjectHideFlags: 0
