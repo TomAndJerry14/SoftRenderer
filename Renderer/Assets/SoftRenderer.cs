@@ -1,4 +1,5 @@
 using System.IO;
+using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
 using Light = SoftRenderer.Light;
@@ -19,6 +20,8 @@ namespace SoftRenderer
 
         public static Object obj = null;
 
+        public Texture2D texture;
+
         public float cameraX;
         public float cameraY;
         public float cameraZ;
@@ -34,7 +37,7 @@ namespace SoftRenderer
         {
             Instance = this;
             string path = Application.dataPath + "/head.obj";
-            obj = LoadObj(path);
+            obj = LoadObj(path); 
 
             cam = new Camera();
             UI.texture = cam.renderer;

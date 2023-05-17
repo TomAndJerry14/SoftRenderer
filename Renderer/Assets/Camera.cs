@@ -44,7 +44,6 @@ namespace SoftRenderer
             Matrix4x4 matrix = Matrix4x4.identity;
             matrix[3, 2] = -1 / z;
 
-            Debug.Log("Projection\n", matrix);
             return matrix;
         }
 
@@ -73,7 +72,6 @@ namespace SoftRenderer
         {
             Matrix4x4 matrixOfObjInWorld = Vertex2Matrix(worldPos);
             Matrix4x4 matrixInViewSpace = ViewPort * Projection * ModelView * matrixOfObjInWorld;
-            Debug.Log("matrixInViewSpace\n", matrixInViewSpace);
             Vector3 position = new Vector3();
             for (int i = 0; i < 3; i++)
             {
@@ -82,7 +80,6 @@ namespace SoftRenderer
                     position[i] += matrixInViewSpace[i, j];
                 }
             }
-            Debug.Log(position);
             return position;
         }
 
@@ -91,9 +88,6 @@ namespace SoftRenderer
             Vector3 z = (_eye - _center).normalized;
             Vector3 x = Vector3.Cross(_up, z).normalized;
             Vector3 y = Vector3.Cross(z, x).normalized;
-            Debug.Log(x);
-            Debug.Log(y);
-            Debug.Log(z);
 
             Matrix4x4 Minv = Matrix4x4.identity;
             Matrix4x4 Tr = Matrix4x4.identity;
@@ -105,7 +99,6 @@ namespace SoftRenderer
                 Tr[i, 3] = -_eye[i];
             }
             ModelView = Minv * Tr;
-            Debug.Log("ModelView\n", ModelView);
         }
 
         public void Start()
@@ -135,30 +128,18 @@ namespace SoftRenderer
             draw.DrawLine(80, 40, 13, 20, Color.white);
 
             draw.DrawObj(SoftRenderer.obj);
-
-            //Debug.Log(Matrix2CameraLocal(Vector3.one), "one");
-            //Debug.Log(Matrix2CameraLocal(Vector3.right), "right");
-            //Debug.Log(Matrix2CameraLocal(-Vector3.right), "-right");
-            //Debug.Log(Matrix2CameraLocal(Vector3.up), "up");
-            //Debug.Log(Matrix2CameraLocal(-Vector3.up), "-up");
-            //Debug.Log(Matrix2CameraLocal(Vector3.forward), "forward");
-            //Debug.Log(Matrix2CameraLocal(-Vector3.forward), "-forward");
-            //Debug.Log(Matrix2CameraLocal(Vector3.zero), "zero");
-
             renderer.Apply();
         }
 
 
+        float time = 1.5f;
         public void Update()
         {
-            if (SoftRenderer.Instance.cameraX != eye.x ||
-                SoftRenderer.Instance.cameraY != eye.y ||
-                SoftRenderer.Instance.cameraZ != eye.z ||
-                SoftRenderer.Instance.centerX != center.x ||
-                SoftRenderer.Instance.centerY != center.y ||
-                SoftRenderer.Instance.centerZ != center.z
-                )
+            time -= Time.deltaTime;
+            if (time < 0)
             {
+                time = 1.5f;
+                eye.x++;
                 int width = SoftRenderer.width;
                 int height = SoftRenderer.height;
                 for (int i = 0; i < width; i++)
@@ -176,24 +157,9 @@ namespace SoftRenderer
                     }
                 }
                 Projection = CreateProjection(SoftRenderer.Instance.cameraZ);
-                eye.x = SoftRenderer.Instance.cameraX;
-                eye.y = SoftRenderer.Instance.cameraY;
-                eye.z = SoftRenderer.Instance.cameraZ;
-                SoftRenderer.Instance.centerX = center.x;
-                SoftRenderer.Instance.centerY = center.y;
-                SoftRenderer.Instance.centerZ = center.z;
                 SetLookAt(eye, center, up);
 
                 draw.DrawObj(SoftRenderer.obj);
-                //Debug.Log(Matrix2CameraLocal(Vector3.one), "one");
-                //Debug.Log(Matrix2CameraLocal(Vector3.right), "right");
-                //Debug.Log(Matrix2CameraLocal(-Vector3.right), "-right");
-                //Debug.Log(Matrix2CameraLocal(Vector3.up), "up");
-                //Debug.Log(Matrix2CameraLocal(-Vector3.up), "-up");
-                //Debug.Log(Matrix2CameraLocal(Vector3.zero), "zero");
-                //Debug.Log(Matrix2CameraLocal(Vector3.forward), "forward");
-                //Debug.Log(Matrix2CameraLocal(-Vector3.forward), "-forward");
-
                 renderer.Apply();
             }
         }
