@@ -86,9 +86,13 @@ namespace SoftRenderer
                 };
 
                 Vector3[] vt = new Vector3[3];
+                Color[] uvColor = new Color[3];
                 for (int j = 0; j < 3; j++)
                 {
-                    vt[j] = obj.texture_vertices[fv[i][j] - 1];
+                    var temp = obj.texture_vertices[fv[i][j] - 1];
+                    vt[j] = temp;
+                        var texture = SoftRenderer.Instance.texture;
+                    uvColor[j] = SoftRenderer.Instance.texture.GetPixel(temp.x * texture.width, temp.y * texture.height);
                 }
 
                 Vector3 normal = Vector3.Cross(oriPos[2] - oriPos[0], oriPos[1] - oriPos[0]);
@@ -103,7 +107,7 @@ namespace SoftRenderer
                 }
 
                 if (intensity > 0)
-                    DrawTriangle(worldPos, vt, new Color(intensity, intensity, intensity, 1));
+                    DrawTriangle(worldPos, vt, new Color(intensity, intensity, intensity, 1),uvColor);
                 //DrawTriangle( worldPos[0], worldPos[1], worldPos[2], new Color(intensity, intensity, intensity, 1));
 
                 DrawPixel(i, i, Color.white);
