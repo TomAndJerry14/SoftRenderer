@@ -66,9 +66,9 @@ namespace SoftRenderer
             return obj;
         }
 
-        //public void Update()
-        //{
-        //    cam.Update();
-        //}
+        public void Update()
+        {
+            cam.Update();
+        }
     }
 }

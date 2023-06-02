@@ -137,7 +137,7 @@ namespace SoftRenderer
             renderer.Apply();
         }
 
-
+        float count = 3;
         float time = 1.5f;
         public void Update()
         {
@@ -145,7 +145,9 @@ namespace SoftRenderer
             if (time < 0)
             {
                 time = 1.5f;
-                eye.x++;
+                count += 0.1f;
+                eye.x = (float)Math.Cos(count );
+                eye.z = (float)Math.Sin(count );
                 int width = SoftRenderer.width;
                 int height = SoftRenderer.height;
                 for (int i = 0; i < width; i++)

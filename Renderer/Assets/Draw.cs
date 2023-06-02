@@ -62,14 +62,15 @@ namespace SoftRenderer
 
         public void DrawObj(Object obj)
         {
-            var fv = obj.face_vertices;
-            int len = fv.Length;
-
-            SoftRenderer.Instance.StartCoroutine(DrawObject(len, obj, fv));
+            SoftRenderer.Instance.StartCoroutine(DrawObject(obj));
         }
 
-        IEnumerator DrawObject(int len, Object obj, int[][] fv)
+        IEnumerator DrawObject(Object obj)
         {
+            var fv = obj.face_vertices;
+            var ftv = obj.face_texture_vertices;
+            var fvn = obj.face_normal_vertices;
+            int len = fv.Length;
             for (int i = 0; i < len; i++)
             {
                 Vector3[] oriPos = new Vector3[3];
@@ -77,7 +78,6 @@ namespace SoftRenderer
                 {
                     oriPos[j] = obj.vertices[fv[i][j] - 1];
                 }
-
                 Vector3[] worldPos = new Vector3[3]
                 {
                       camera.Matrix2CameraLocal(oriPos[0]),
@@ -85,32 +85,29 @@ namespace SoftRenderer
                       camera.Matrix2CameraLocal(oriPos[2]),
                 };
 
-                Vector3[] vt = new Vector3[3];
+                Vector3[] vts = new Vector3[3];
                 Color[] uvColor = new Color[3];
+                Vector3[] vns = new Vector3[3];
                 for (int j = 0; j < 3; j++)
                 {
-                    var temp = obj.texture_vertices[fv[i][j] - 1];
-                    vt[j] = temp;
-                        var texture = SoftRenderer.Instance.texture;
-                    uvColor[j] = SoftRenderer.Instance.texture.GetPixel(temp.x * texture.width, temp.y * texture.height);
+                    var temp = obj.texture_vertices[ftv[i][j] - 1];
+                    vts[j] = temp;
+                    var texture = SoftRenderer.Instance.texture;
+                    uvColor[j] = SoftRenderer.Instance.texture.GetPixel((int)(temp.x * texture.width), (int)(temp.y * texture.height));
+
+                    vns[j] = obj.normals[fvn[i][j] - 1];
                 }
 
-                Vector3 normal = Vector3.Cross(oriPos[2] - oriPos[0], oriPos[1] - oriPos[0]);
-                normal.Normalize();
-                Vector3 lightDir = -Vector3.forward;
-                lightDir.Normalize();
-                float intensity = Vector3.Dot(lightDir, normal);
 
                 for (int j = 0; j < 3; j++)
                 {
                     worldPos[j] += new Vector3(SoftRenderer.width / 2, SoftRenderer.height / 2, 0);
                 }
 
-                if (intensity > 0)
-                    DrawTriangle(worldPos, vt, new Color(intensity, intensity, intensity, 1),uvColor);
+                //if (intensity > 0)
+                DrawTriangle(worldPos, vns, uvColor);
                 //DrawTriangle( worldPos[0], worldPos[1], worldPos[2], new Color(intensity, intensity, intensity, 1));
 
-                DrawPixel(i, i, Color.white);
                 if (i % 100 == 0)
                 {
                     camera.renderer.Apply();
@@ -137,11 +134,9 @@ namespace SoftRenderer
             }
             return new Vector3(-1, 1, 1);
         }
-        public void DrawTriangle(Vector3[] points, Vector3[] vts, Color color)
-        {
-            //读取uv
-            //SoftRenderer.width
 
+        public void DrawTriangle(Vector3[] points, Vector3[] vns, Color[] uvColors)
+        {
             Vector2 boxMin = new Vector2(float.MaxValue, float.MaxValue);
             Vector2 boxMax = new Vector2();
             Vector2 clamp = new Vector2(camera.renderer.width - 1, camera.renderer.height - 1);
@@ -163,7 +158,6 @@ namespace SoftRenderer
 
                     if (barycentric.x < 0 || barycentric.y < 0 || barycentric.z < 0) { continue; }
 
-                    Debug.Log(barycentric);
                     p.z = 0;
                     for (int i = 0; i < 3; i++)
                     {
@@ -173,36 +167,21 @@ namespace SoftRenderer
                     {
                         camera.zBuffer[(int)p.x, (int)p.y] = p.z;
 
-                        //如果绘制,读取点插值贴图的数据
-                        var uvPoint = p - points[0];
-                        int w = (int)(uvPoint.x * SoftRenderer.width);
-                        int h = (int)(uvPoint.y * SoftRenderer.height);
-                        color = SoftRenderer.Instance.texture.GetPixel(h, w);
-                        DrawPixel((int)p.x, (int)p.y, color);
-                        Color uvColor0 = SoftRenderer.Instance.texture.GetPixel((int)(vts[0].x * SoftRenderer.Instance.texture.width), (int)(vts[0].y * SoftRenderer.Instance.texture.height));
-                        Color uvColor1 = SoftRenderer.Instance.texture.GetPixel((int)(vts[1].x * SoftRenderer.Instance.texture.width), (int)(vts[1].y * SoftRenderer.Instance.texture.height));
-                        Color uvColor2 = SoftRenderer.Instance.texture.GetPixel((int)(vts[2].x * SoftRenderer.Instance.texture.width), (int)(vts[2].y * SoftRenderer.Instance.texture.height));
-                        Color uvColor = (1 - barycentric.y - barycentric.z) * uvColor0 + barycentric.y * uvColor1 + barycentric.z * uvColor2;
-                        if ((1 - barycentric.y - barycentric.z) == 1f)
+
+                        //todo vts vns 移到顶点处理
+                        Color uvColor = Color.black;
+                        float intensity = 0.5f;
+                        for (int i = 0; i < 3; i++)
                         {
-                            Debug.Log(points[0], vts[0]);
+                            float dot = Vector3.Dot(vns[i], Vector3.forward);
+                            intensity += dot * barycentric[i];
+                            uvColor += barycentric[i] * uvColors[i];
                         }
 
-                        if ((barycentric.y ) == 1f)
-                        {
-                            Debug.Log(points[1], vts[1]);
-                        }
-
-                        if ((barycentric.z) == 1f)
-                        {
-                            Debug.Log(points[2], vts[2]);
-                        }
-                        //Debug.Log(uvColor0, (int)(vts[0].x * SoftRenderer.Instance.texture.width), (int)(vts[0].y * SoftRenderer.Instance.texture.height));
-                        //Debug.Log(uvColor0, (int)(vts[1].x * SoftRenderer.Instance.texture.width), (int)(vts[1].y * SoftRenderer.Instance.texture.height));
-                        //Debug.Log(uvColor0, (int)(vts[2].x * SoftRenderer.Instance.texture.width), (int)(vts[2].y * SoftRenderer.Instance.texture.height));
-                        //Debug.Log(uvColor);
-
-                        //Debug.Log((int)p.x, (int)p.y, uvColor);
+                        intensity *= 0.5f;
+                        uvColor.r *= intensity;
+                        uvColor.g *= intensity;
+                        uvColor.b *= intensity;
 
                         DrawPixel((int)p.x, (int)p.y, uvColor);
                     }
@@ -210,76 +189,6 @@ namespace SoftRenderer
                 }
             }
         }
-
-
-        //public void DrawTriangle(Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
-        //{
-        //    for (int i = 0; i < 2; i++)
-        //    {
-        //        pos0[i] *= 200;
-        //        pos1[i] *= 200;
-        //        pos2[i] *= 200;
-        //        pos0[i] += 200;
-        //        pos1[i] += 200;
-        //        pos2[i] += 200;
-        //    }
-
-        //    if (pos0.y == pos1.y && pos1.y == pos2.y)
-        //    {
-        //        Debug.Log("============");
-        //        return;
-        //    }
-        //    if (pos0.y > pos1.y)
-        //        Swap(ref pos0, ref pos1);
-        //    if (pos0.y > pos2.y)
-        //        Swap(ref pos0, ref pos2);
-        //    if (pos1.y > pos2.y)
-        //        Swap(ref pos1, ref pos2);
-
-
-        //    if (pos0.y == pos1.y)
-        //    {
-        //        if (pos0.x > pos1.x)
-        //            Swap(ref pos0, ref pos1);
-        //        DrawTriangleInternal(pos0, pos1, pos2, color);
-        //    }
-        //    else if (pos1.y == pos2.y)
-        //    {
-        //        DrawTriangleInternal(pos1, pos2, pos0, color);
-        //    }
-        //    else
-        //    {
-        //        float CulculateX(float x1, float x2, float y1, float y2, float y)
-        //        {
-        //            if (y2 == y1)
-        //            {
-        //                throw new Exception($"不能为直线,x1:{x1},x2:{x2},y1:{y1},y2:{y2}");
-        //            }
-        //            if (x2 == x1)
-        //                return x1;
-        //            float x = (x2 - x1) / (y2 - y1) * (y - y1) + x1;
-        //            return x;
-        //        }
-        //        //拆分两个三角形
-        //        int totalHeight = (int)(pos2.y - pos0.y);
-        //        Vector2 centerPos = new Vector2(CulculateX(pos0.x, pos2.x, pos0.y, pos2.y, pos1.y), pos1.y);
-
-        //        //上三角形
-        //        Vector2 pos2_t = pos2;
-        //        Vector2 pos1_t = centerPos.x > pos1.x ? centerPos : pos1;
-        //        Vector2 pos0_t = centerPos.x > pos1.x ? pos1 : centerPos;
-        //        DrawTriangleInternal(pos0_t, pos1_t, pos2_t, color);
-
-        //        //下三角形，需要往下一格
-        //        Vector2 pos2_b = pos0;//最低点
-        //        int y = (int)pos1.y - 1;
-        //        Vector2 pos0_b = new Vector2(CulculateX(pos0_t.x, pos2_b.x, pos0_t.y, pos2_b.y, y), y);
-        //        Vector2 pos1_b = new Vector2(CulculateX(pos1_t.x, pos2_b.x, pos1_t.y, pos2_b.y, y), y);
-        //        if (pos0_b.x > pos1_b.x)
-        //            Swap(ref pos0_b, ref pos1_b);
-        //        DrawTriangleInternal(pos0_b, pos1_b, pos2_b, color);
-        //    }
-        //}
 
         public void DrawTriangleInternal(Vector2 pos0, Vector2 pos1, Vector2 pos2, Color color)
         {

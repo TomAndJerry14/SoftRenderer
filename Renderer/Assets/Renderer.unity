@@ -349,9 +349,9 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UI: {fileID: 1058846547}
   rotLgiht: {fileID: 1162570260}
-  texture: {fileID: 0}
+  texture: {fileID: 2800000, guid: 6665c42458897e64db745dad8a5bf773, type: 3}
   cameraX: 0
-  cameraY: 1
+  cameraY: 0
   cameraZ: 1
   centerX: 0
   centerY: 0
