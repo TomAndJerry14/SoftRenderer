@@ -37,14 +37,13 @@ namespace SoftRenderer
         {
             Instance = this;
             string path = Application.dataPath + "/head.obj";
-            obj = LoadObj(path); 
+            obj = LoadObj(path);
 
             cam = new Camera();
             UI.texture = cam.renderer;
 
-
-
-
+         
+            
 
 
 
@@ -57,8 +56,9 @@ namespace SoftRenderer
             //Draw.DrawTriangle(renderer, new Vector3[] { new Vector2(200, 90), new Vector2(200, 200), new Vector2(150, 120) }, Color.yellow);
 
 
-
         }
+
+        
 
         private static Object LoadObj(string path)
         {
@@ -66,9 +66,9 @@ namespace SoftRenderer
             return obj;
         }
 
-        public void Update()
-        {
-            cam.Update();
-        }
+        //public void Update()
+        //{
+        //    cam.Update();
+        //}
     }
 }

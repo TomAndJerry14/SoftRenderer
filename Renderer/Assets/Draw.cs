@@ -1,5 +1,6 @@
 ﻿using Cysharp.Threading.Tasks;
 using System;
+using System.Collections;
 using UnityEngine;
 
 
@@ -64,6 +65,11 @@ namespace SoftRenderer
             var fv = obj.face_vertices;
             int len = fv.Length;
 
+            SoftRenderer.Instance.StartCoroutine(DrawObject(len, obj, fv));
+        }
+
+        IEnumerator DrawObject(int len, Object obj, int[][] fv)
+        {
             for (int i = 0; i < len; i++)
             {
                 Vector3[] oriPos = new Vector3[3];
@@ -99,6 +105,13 @@ namespace SoftRenderer
                 if (intensity > 0)
                     DrawTriangle(worldPos, vt, new Color(intensity, intensity, intensity, 1));
                 //DrawTriangle( worldPos[0], worldPos[1], worldPos[2], new Color(intensity, intensity, intensity, 1));
+
+                DrawPixel(i, i, Color.white);
+                if (i % 100 == 0)
+                {
+                    camera.renderer.Apply();
+                    yield return new WaitForEndOfFrame();
+                }
             }
         }
 
@@ -146,6 +159,7 @@ namespace SoftRenderer
 
                     if (barycentric.x < 0 || barycentric.y < 0 || barycentric.z < 0) { continue; }
 
+                    Debug.Log(barycentric);
                     p.z = 0;
                     for (int i = 0; i < 3; i++)
                     {
@@ -161,6 +175,32 @@ namespace SoftRenderer
                         int h = (int)(uvPoint.y * SoftRenderer.height);
                         color = SoftRenderer.Instance.texture.GetPixel(h, w);
                         DrawPixel((int)p.x, (int)p.y, color);
+                        Color uvColor0 = SoftRenderer.Instance.texture.GetPixel((int)(vts[0].x * SoftRenderer.Instance.texture.width), (int)(vts[0].y * SoftRenderer.Instance.texture.height));
+                        Color uvColor1 = SoftRenderer.Instance.texture.GetPixel((int)(vts[1].x * SoftRenderer.Instance.texture.width), (int)(vts[1].y * SoftRenderer.Instance.texture.height));
+                        Color uvColor2 = SoftRenderer.Instance.texture.GetPixel((int)(vts[2].x * SoftRenderer.Instance.texture.width), (int)(vts[2].y * SoftRenderer.Instance.texture.height));
+                        Color uvColor = (1 - barycentric.y - barycentric.z) * uvColor0 + barycentric.y * uvColor1 + barycentric.z * uvColor2;
+                        if ((1 - barycentric.y - barycentric.z) == 1f)
+                        {
+                            Debug.Log(points[0], vts[0]);
+                        }
+
+                        if ((barycentric.y ) == 1f)
+                        {
+                            Debug.Log(points[1], vts[1]);
+                        }
+
+                        if ((barycentric.z) == 1f)
+                        {
+                            Debug.Log(points[2], vts[2]);
+                        }
+                        //Debug.Log(uvColor0, (int)(vts[0].x * SoftRenderer.Instance.texture.width), (int)(vts[0].y * SoftRenderer.Instance.texture.height));
+                        //Debug.Log(uvColor0, (int)(vts[1].x * SoftRenderer.Instance.texture.width), (int)(vts[1].y * SoftRenderer.Instance.texture.height));
+                        //Debug.Log(uvColor0, (int)(vts[2].x * SoftRenderer.Instance.texture.width), (int)(vts[2].y * SoftRenderer.Instance.texture.height));
+                        //Debug.Log(uvColor);
+
+                        //Debug.Log((int)p.x, (int)p.y, uvColor);
+
+                        DrawPixel((int)p.x, (int)p.y, uvColor);
                     }
 
                 }

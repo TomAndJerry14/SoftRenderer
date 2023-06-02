@@ -128,6 +128,12 @@ namespace SoftRenderer
             draw.DrawLine(80, 40, 13, 20, Color.white);
 
             draw.DrawObj(SoftRenderer.obj);
+
+            for (int i = 0; i < 100; i++)
+            {
+                draw.DrawPixel(i, i, Color.white);
+            }
+
             renderer.Apply();
         }
 
