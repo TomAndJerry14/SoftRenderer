@@ -2,6 +2,7 @@ using System.IO;
 using UnityEditor;
 using UnityEngine;
 using UnityEngine.UI;
+using UnityEditor;
 using Light = SoftRenderer.Light;
 
 namespace SoftRenderer
@@ -18,57 +19,87 @@ namespace SoftRenderer
         public static Light light = new Light();
         public GameObject rotLgiht;
 
-        public static Object obj = null;
+        public static Model obj = null;
 
-        public Texture2D texture;
+        public Texture2D diffuse;
+        public Texture2D normal;
 
         public float cameraX;
         public float cameraY;
         public float cameraZ;
 
+        public float LightX;
+        public float LightY;
+        public float LightZ;
+
         public float centerX = 0f;
         public float centerY = 0f;
         public float centerZ = 0f;
 
+        public bool shadow = true;
+        public bool model = true;
 
-        Camera cam;
+        public Camera cam;
 
         public void Start()
         {
             Instance = this;
-            string path = Application.dataPath + "/head.obj";
-            obj = LoadObj(path);
+            
 
             cam = new Camera();
             UI.texture = cam.renderer;
 
-         
-            
+            string path = Application.dataPath + "/Model/head.obj";
+            obj = LoadObj(path);
 
-
-
-            //Draw.DrawTriangle(renderer, new Vector2(10, 10), new Vector2(100, 10), new Vector2(50, 50), Color.red);
-            //Draw.DrawTriangle(renderer, new Vector2(131, 90), new Vector2(20, 90), new Vector2(50, 50), Color.white);
-            //Draw.DrawTriangle(renderer, new Vector2(200, 90), new Vector2(200, 200), new Vector2(150, 120), Color.yellow);
-
-            //Draw.DrawTriangle(renderer, new Vector3[] { new Vector2(10, 10), new Vector2(100, 10), new Vector2(50, 50) }, Color.red);
-            //Draw.DrawTriangle(renderer, new Vector3[] { new Vector2(131, 90), new Vector2(20, 90), new Vector2(50, 50) }, Color.white);
-            //Draw.DrawTriangle(renderer, new Vector3[] { new Vector2(200, 90), new Vector2(200, 200), new Vector2(150, 120) }, Color.yellow);
-
-
+            cam.Start();
         }
 
-        
-
-        private static Object LoadObj(string path)
+        float time = 2.5f;
+        public void Update()
         {
-            Object obj = new Object(File.ReadAllLines(path));
+            time -= Time.deltaTime;
+            if (time < 0)
+            {
+                cam.Update();
+                time = 2.5f;
+            }
+        }
+
+
+        private static Model LoadObj(string path)
+        {
+            Model obj = new Model(File.ReadAllLines(path), Instance.diffuse, Instance.normal);
+            obj.shader = new MyShader(obj, Instance.cam);
+            obj.shadowShader = new DepthShader(obj, Instance.cam);
             return obj;
         }
 
-        public void Update()
+        private void OnGUI()
         {
-            cam.Update();
+            if (GUI.Button(new Rect(new Vector2(0, 800), new Vector2(100, 50)), "äÖÈ¾"))
+            {
+                int width = SoftRenderer.width;
+                int height = SoftRenderer.height;
+                cam.zBuffer = new float[width * height];
+                for (int i = 0; i < width; i++)
+                {
+                    for (int j = 0; j < height; j++)
+                    {
+                        cam.zBuffer[j * width + i] = float.MinValue;
+                        cam.depth[j * width + i] = float.MinValue;
+                    }
+                }
+                for (int i = 0; i < width; i++)
+                {
+                    for (int j = 0; j < height; j++)
+                    {
+                        MyGL.DrawPixel(cam.renderer, i, j, new Color(0.5f, 0.5f, 0.5f, 0.5f));
+                    }
+                }
+
+                cam.DrawModel(obj);
+            }
         }
     }
 }

@@ -9,43 +9,25 @@ using UnityEngine;
 
 namespace SoftRenderer
 {
-    public class Object
+    public class Model
     {
         public Vector3[] vertices;
         public Vector3[] texture_vertices;
-        public Vector3[] normals;
+        public Vector3[] vertex_normals;
         public int[][] face_vertices;
         public int[][] face_texture_vertices;
         public int[][] face_normal_vertices;
         public string group;
         public int smooth;
 
-        public Object(string text)
-        {
-            //Regex r = new Regex(@"v (-?[0-9]*\.?[0-9]*(e-\d+)?) (-?[0-9]*\.?[0-9]*(e-\d+)?) (-?[0-9]*\.?[0-9]*(e-\d+)?)");
-            //var mc = r.Matches(text);
+        public Texture2D diffuseMap;
+        public Texture2D normalMap;
+        public Texture2D specularmap;
 
-            //vertices = new Vector3[mc.Count];
-            //int index = 0;
-            //foreach (string item in mc)
-            //{
+        public IShader shader;
+        public IShader shadowShader;
 
-            //}
-
-            //r = new Regex(@"vt (-?[0-9]*\.?[0-9]*(e-\d+)?) (-?[0-9]*\.?[0-9]*(e-\d+)?) (-?[0-9]*\.?[0-9]*(e-\d+)?)");
-            //mc = r.Matches(text);
-            //vertices = new Vector3[mc.Count];
-            //index = 0;
-            //foreach (string item in mc)
-            //{
-            //    Vector3 point = ParseTextureVertex(item);
-            //    vertices[index] = point;
-            //    index++;
-            //}
-
-        }
-
-        public Object(string[] lines)
+        public Model(string[] lines, Texture2D diffuseMap, Texture2D normalMap)
         {
             int index = 0;
             List<Vector3> _vertices = new List<Vector3>();
@@ -133,10 +115,14 @@ namespace SoftRenderer
 
             vertices = _vertices.ToArray();
             texture_vertices = _texture_vertices.ToArray();
-            normals = _normals.ToArray();
+            vertex_normals = _normals.ToArray();
             face_vertices = _face_vertices.ToArray();
             face_texture_vertices = _face_texture_vertices.ToArray();
             face_normal_vertices = _face_normal_vertices.ToArray();
+
+
+            this.diffuseMap = diffuseMap;
+            this.normalMap = normalMap;
         }
 
         Vector3 ParseVertex(string oneLine)
@@ -177,6 +163,26 @@ namespace SoftRenderer
             }
 
             return face;
+        }
+
+        public Vector3 vertex(int faceIndex, int vertexIndex)
+        {
+            return this.vertices[this.face_vertices[faceIndex][vertexIndex] - 1];
+        }
+        public Vector2 uv(int faceIndex, int vertextIndex)
+        {
+            var uv = texture_vertices[face_texture_vertices[faceIndex][vertextIndex] - 1];
+            return uv;
+        }
+
+        public Color normal(float x, float y)
+        {
+            return this.normalMap.GetPixel((int)(x * this.normalMap.width), (int)(y * this.normalMap.height));
+        }
+
+        public Color normal(Vector2 coordinate)
+        {
+            return this.normalMap.GetPixel((int)(coordinate.x * this.normalMap.width), (int)(coordinate.y * this.normalMap.height));
         }
     }
 }

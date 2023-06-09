@@ -12,5 +12,7 @@ namespace SoftRenderer
     {
         public float intensity { get; set; } = 10f;
         public Vector3 rot { get; set; } = new Vector3(100, -10, 10);
+
+        public Vector3 dir { get; } = -Vector3.forward;
     }
 }
