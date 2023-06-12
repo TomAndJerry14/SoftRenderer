@@ -36,12 +36,25 @@ namespace SoftRenderer
 
         private WaitForFixedUpdate wait = new WaitForFixedUpdate();
 
+        public static Camera main;
+
         public Camera()
         {
+            main = this;
             renderer = new Texture2D(SoftRenderer.width, SoftRenderer.height);
             depthMap = new Texture2D(SoftRenderer.width, SoftRenderer.height);
+
+            InitData();
+        }
+
+
+        public void InitData()
+        {
+            eye = new Vector3(SoftRenderer.Instance.cameraX, SoftRenderer.Instance.cameraY, SoftRenderer.Instance.cameraZ);
+            shadow = new Vector3(SoftRenderer.Instance.LightX, SoftRenderer.Instance.LightY, SoftRenderer.Instance.LightZ);
+
             Projection = CreateProjection(SoftRenderer.Instance.cameraZ);
-            Viewport = CreateViewPort(SoftRenderer.width / 8, SoftRenderer.height / 8, SoftRenderer.width / 3, SoftRenderer.height / 3);
+            Viewport = CreateViewPort(SoftRenderer.width / 8, SoftRenderer.height / 8, SoftRenderer.width * 2 / 3, SoftRenderer.height * 2 / 3);
 
             SetLookAt(this.shadow, this.center, this.up);
             ModelViewForLight = ModelView;
@@ -52,18 +65,19 @@ namespace SoftRenderer
         static Matrix4x4 CreateProjection(float z)
         {
             Matrix4x4 matrix = Matrix4x4.identity;
-            matrix[3, 2] = z == 0? 0:-1 / z;
+            matrix[3, 2] = z == 0 ? 0 : -1 / z;
 
             return matrix;
         }
 
         static Matrix4x4 CreateViewPort(int x, int y, int w, int h)
         {
-            return new Matrix4x4(
-                new Vector4(w / 2f, 0, 0, x + w / 2),
-                new Vector4(0, h / 2f, 0, y + h / 2f),
-                new Vector4(0, 0, 1, 0),
-                new Vector4(0, 0, 0, 1));
+            var matrix = new Matrix4x4(
+            new Vector4(w / 2f, 0, 0, x + w / 2),
+            new Vector4(0, h / 2f, 0, y + h / 2f),
+            new Vector4(0, 0, 1, 0),
+            new Vector4(0, 0, 0, 1));
+            return matrix.transpose;
         }
 
         //顶点世界坐标转换到齐次空间
@@ -120,6 +134,7 @@ namespace SoftRenderer
         {
             var fv = obj.face_vertices;
             int len = fv.Length;
+
             if (SoftRenderer.Instance.shadow)
             {
 
@@ -168,7 +183,7 @@ namespace SoftRenderer
                     }
                 }
             }
-           
+            Debug.Log("finish");
         }
 
         public void Start()

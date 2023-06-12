@@ -28,21 +28,21 @@ namespace SoftRenderer
         {
             varying_uv.SetColumn(vertexIndex, obj.uv(faceIndex, vertexIndex));
             Vector3 vertex = obj.vertex(faceIndex, vertexIndex);
-            Vector4 gl_Vertex = cam.Viewport * cam.ProjectionForLight * cam.ModelViewForLight * new Vector4(vertex.x, vertex.y, vertex.z, 0);
-            //gl_Vertex /= gl_Vertex[3];
+            Vector4 gl_Vertex = cam.Viewport * cam.ProjectionForLight * cam.ModelViewForLight * new Vector4(vertex.x, vertex.y, vertex.z, 1);
+            gl_Vertex /= gl_Vertex[3];
             varying_tri.SetColumn(vertexIndex, gl_Vertex);
-            return gl_Vertex + new Vector4(SoftRenderer.width / 2, SoftRenderer.height / 2); // transform it to screen coordinates
+            return gl_Vertex; // transform it to screen coordinates
         }
 
         public bool fragment(Vector3 bar, out Color color, Texture2D output)
         {
 
             float z = varying_tri[2, 0] * bar.x + varying_tri[2, 1] * bar.y + varying_tri[2, 2] * bar.z;
-            color = new Color(z, z, z, 1);
+            color = new Color(z * 5, z * 5, z * 5, 1);
             //color = Color.white;
 
 
-            return true;
+            return !SoftRenderer.Instance.shadow || SoftRenderer.Instance.model;
         }
     }
 }

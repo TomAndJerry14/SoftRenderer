@@ -44,7 +44,6 @@ namespace SoftRenderer
                     if (zbuffer[zbufferIndex] <= p.z)
                     {
                         zbuffer[zbufferIndex] = p.z;
-
                         bool discard = shader.fragment(barycentric, out var color, output);
                         if (!discard)
                         {

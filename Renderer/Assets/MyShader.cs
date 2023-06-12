@@ -17,11 +17,6 @@ namespace SoftRenderer
         public Matrix4x4 ndc_tri;
         public Matrix4x4 varying_world;
 
-
-        public Matrix4x4 uniform_M;
-        public Matrix4x4 uniform_MIT;
-        public Matrix4x4 uniform_Mshadow;
-
         Camera cam;
 
 
@@ -29,10 +24,6 @@ namespace SoftRenderer
         {
             this.obj = obj;
             this.cam = cam;
-
-            uniform_M = this.cam.Projection * this.cam.ModelView;
-            uniform_MIT = (this.cam.Projection * this.cam.ModelView).inverse;
-            uniform_Mshadow = cam.Viewport * cam.ProjectionForLight * cam.ModelViewForLight;
         }
 
 
@@ -47,17 +38,12 @@ namespace SoftRenderer
             Vector3 vertex = obj.vertex(faceIndex, vertexIndex);
 
             //世界坐标转化到摄像机坐标
-            Vector4 gl_Vertex = uniform_M * new Vector4(vertex.x, vertex.y, vertex.z, 0);
+            Vector4 gl_Vertex = cam.Viewport * this.cam.Projection * this.cam.ModelView * new Vector4(vertex.x, vertex.y, vertex.z, 1);
+            gl_Vertex = gl_Vertex / gl_Vertex[3];
             varying_tri.SetColumn(vertexIndex, gl_Vertex);
             ndc_tri.SetColumn(vertexIndex, new Vector3(gl_Vertex.x, gl_Vertex.y, gl_Vertex.z));
 
-            //Debug.Log(vertex);
-            //Debug.Log(gl_Vertex);
-            //Debug.Log(uniform_MIT * gl_Vertex);
-            //Debug.Log("========================");
-
-
-            return this.cam.Viewport * gl_Vertex + new Vector4(SoftRenderer.width / 2, SoftRenderer.height / 2); // transform it to screen coordinates
+            return gl_Vertex; // transform it to screen coordinates
         }
 
         public bool fragment(Vector3 bar, out Color color, Texture2D output)
@@ -67,56 +53,50 @@ namespace SoftRenderer
 
             Vector3 bn = (varying_normal * bar).normalized;
 
+            //var ind = Vector3.Dot(bn, -SoftRenderer.light.dir);
+            //color.r *= ind;
+            //color.g *= ind;
+            //color.b *= ind;
+
             #region 切线空间但不知道为什么没生效
-            Matrix4x4 A = Matrix4x4.identity;
-            A[3, 3] = 0;
-            A.SetColumn(0, ndc_tri.GetColumn(1) - ndc_tri.GetColumn(0));
-            A.SetColumn(1, ndc_tri.GetColumn(2) - ndc_tri.GetColumn(0));
-            A.SetColumn(2, bn);
+            //Matrix4x4 A = Matrix4x4.identity;
+            //A[3, 3] = 0;
+            //A.SetColumn(0, ndc_tri.GetColumn(1) - ndc_tri.GetColumn(0));
+            //A.SetColumn(1, ndc_tri.GetColumn(2) - ndc_tri.GetColumn(0));
+            //A.SetColumn(2, bn);
 
-            Matrix4x4 AI = A.inverse;
+            //Matrix4x4 AI = A.inverse;
 
-            Vector3 i = AI * new Vector3(varying_uv[0, 1] - varying_uv[0, 0], varying_uv[0, 2] - varying_uv[0, 0], 0);
-            Vector3 j = AI * new Vector3(varying_uv[1, 1] - varying_uv[1, 0], varying_uv[1, 2] - varying_uv[1, 0], 0);
+            //Vector3 i = AI * new Vector3(varying_uv[0, 1] - varying_uv[0, 0], varying_uv[0, 2] - varying_uv[0, 0], 0);
+            //Vector3 j = AI * new Vector3(varying_uv[1, 1] - varying_uv[1, 0], varying_uv[1, 2] - varying_uv[1, 0], 0);
 
-            Matrix4x4 B = Matrix4x4.identity;
-            B.SetColumn(0, i.normalized);
-            B.SetColumn(1, j.normalized);
-            B.SetColumn(2, bn);
+            //Matrix4x4 B = Matrix4x4.identity;
+            //B.SetColumn(0, i.normalized);
+            //B.SetColumn(1, j.normalized);
+            //B.SetColumn(2, bn);
 
             #endregion
 
             //摄像机下的坐标
             Vector4 crood = varying_tri * bar;
             //转回世界坐标
-            Vector4 _crood = uniform_MIT * crood;
+            Vector4 _crood = (cam.Viewport * cam.Projection * cam.ModelView).inverse * crood;
             //世界坐标转到阴影坐标
-            Vector4 sb_p = uniform_Mshadow * _crood;
-            sb_p += new Vector4(SoftRenderer.width / 2, SoftRenderer.height / 2);
+            Vector4 sb_p = cam.Viewport * cam.ProjectionForLight * cam.ModelViewForLight * _crood;
+            sb_p = sb_p / sb_p[3];
             int idx = (int)sb_p[0] + (int)sb_p[1] * output.width;
 
-            //Debug.Log(varying_tri * bar);
-            //Debug.Log(crood);
-            //Debug.Log(sb_p);
-            //Debug.Log("==========");
-            try
+            if (sb_p[2] < cam.depth[idx])
             {
-
-                color = new Color(cam.depth[idx], cam.depth[idx], cam.depth[idx], 1);
-            }
-            catch
-            {
-                Debug.Log("======");
-                Debug.Log("varying_tri\n", varying_tri);
-                Debug.Log("bar", bar);
-                Debug.Log("crood", crood);
-                Debug.Log("_crood", _crood);
-                Debug.Log("sb_p", sb_p);
-                Debug.Log(idx);
-                throw;
+                //在阴影里
+                color.r *= 0.3f;
+                color.g *= 0.3f;
+                color.b *= 0.3f;
+                //color = Color.black;
             }
 
 
+            //高光 冯着色
             //Vector3 n = (B * obj.normal(uv));
             //Vector3 l = -SoftRenderer.light.dir.normalized;
             //Vector3 r = (n * (Vector3.Dot(n, l) * 2f) - l).normalized; //反射向量
@@ -161,7 +141,6 @@ namespace SoftRenderer
         {
             return map.GetPixel((int)(map.width * uv.x + 0.5f), (int)(map.height * uv.y + 0.5f));
         }
-
 
 
 

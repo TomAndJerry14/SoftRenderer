@@ -11,8 +11,8 @@ namespace SoftRenderer
     {
         public static SoftRenderer Instance;
 
-        public static int width = 2340;
-        public static int height = 2340;
+        public static int width = 1024;
+        public static int height = 1024;
 
         public RawImage UI;
 
@@ -49,7 +49,7 @@ namespace SoftRenderer
             cam = new Camera();
             UI.texture = cam.renderer;
 
-            string path = Application.dataPath + "/Model/head.obj";
+            string path = Application.dataPath + "/Model/diablo3_pose.obj";
             obj = LoadObj(path);
 
             cam.Start();
@@ -79,9 +79,11 @@ namespace SoftRenderer
         {
             if (GUI.Button(new Rect(new Vector2(0, 800), new Vector2(100, 50)), "‰÷»æ"))
             {
+                cam.InitData();
+
                 int width = SoftRenderer.width;
                 int height = SoftRenderer.height;
-                cam.zBuffer = new float[width * height];
+                
                 for (int i = 0; i < width; i++)
                 {
                     for (int j = 0; j < height; j++)

@@ -349,19 +349,19 @@ MonoBehaviour:
   m_EditorClassIdentifier: 
   UI: {fileID: 1058846547}
   rotLgiht: {fileID: 1162570260}
-  diffuse: {fileID: 2800000, guid: 6665c42458897e64db745dad8a5bf773, type: 3}
-  normal: {fileID: 2800000, guid: 11314071a14816748b0d72dd453e4fec, type: 3}
+  diffuse: {fileID: 2800000, guid: afce9b3c8de52ab45a1ca6502262dbb7, type: 3}
+  normal: {fileID: 2800000, guid: 99e4de385c60bac4e86b33dc95468e2d, type: 3}
   cameraX: 0
   cameraY: 0
   cameraZ: 8
   LightX: 3
   LightY: 0
-  LightZ: 3
+  LightZ: 0
   centerX: 0
   centerY: 0
   centerZ: 0
   shadow: 1
-  model: 0
+  model: 1
 --- !u!4 &1522861930
 Transform:
   m_ObjectHideFlags: 0
