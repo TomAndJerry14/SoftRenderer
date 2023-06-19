@@ -164,9 +164,11 @@ namespace SoftRenderer
                 vsJob.uvs = data.uvs;
                 vsJob.triangleVertexData = data.triangleVertexData;
                 vsJob.triangleUVData = data.triangleUVData;
-;
+
                 vsJob.result = vSOutBufs;
                 JobHandle vsHandle = vsJob.Schedule(len, 3);
+
+                TriangleShadingJob tsJob = new TriangleShadingJob();
 
             }
             if (SoftRenderer.Instance.model)
