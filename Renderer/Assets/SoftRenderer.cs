@@ -5,6 +5,10 @@ using UnityEngine.UI;
 using UnityEditor;
 using Light = SoftRenderer.Light;
 
+
+/// <summary>
+/// 450ms
+/// </summary>
 namespace SoftRenderer
 {
     public class SoftRenderer : MonoBehaviour
@@ -49,23 +53,11 @@ namespace SoftRenderer
             cam = new Camera();
             UI.texture = cam.renderer;
 
-            string path = Application.dataPath + "/Model/diablo3_pose.obj";
+            string path = Application.dataPath + "/Model/Head.obj";
             obj = LoadObj(path);
 
             cam.Start();
         }
-
-        float time = 2.5f;
-        public void Update()
-        {
-            time -= Time.deltaTime;
-            if (time < 0)
-            {
-                cam.Update();
-                time = 2.5f;
-            }
-        }
-
 
         private static Model LoadObj(string path)
         {

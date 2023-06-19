@@ -46,12 +46,12 @@ namespace SoftRenderer
 
             Vector3 vertex = obj.vertex(faceIndex, vertexIndex);
             varying_world.SetColumn(vertexIndex, vertex);
-            Vector4 gl_Vertex = cam.Projection * cam.ModelView * new Vector4(vertex.x, vertex.y, vertex.z, 0);
+            Vector4 gl_Vertex = cam.Viewport * cam.Projection * cam.ModelView * new Vector4(vertex.x, vertex.y, vertex.z, 1);
             varying_tri.SetColumn(vertexIndex, gl_Vertex);
             ndc_tri.SetColumn(vertexIndex, new Vector3(gl_Vertex.x, gl_Vertex.y, gl_Vertex.z));
 
 
-            return cam.Viewport * gl_Vertex + new Vector4(SoftRenderer.width / 2, SoftRenderer.height / 2); // transform it to screen coordinates
+            return gl_Vertex; // transform it to screen coordinates
         }
 
         public bool fragment(Vector3 bar, out Color color, Texture2D output)

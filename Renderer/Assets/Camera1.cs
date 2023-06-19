@@ -5,11 +5,12 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Unity.Collections;
+using Unity.Jobs;
 using UnityEngine;
 
 namespace SoftRenderer
 {
-    public class Camera
+    public class Camera1
     {
         //public Transform Transform { get; set; }
 
@@ -25,8 +26,8 @@ namespace SoftRenderer
 
         public Matrix4x4 ModelViewForLight;
 
-        public float[] zBuffer;
-        public float[] depth;
+        public NativeArray<float> zBuffer;
+        public NativeArray<float> depth;
         public Texture2D renderer;
         public Texture2D depthMap;
 
@@ -37,9 +38,9 @@ namespace SoftRenderer
 
         private WaitForFixedUpdate wait = new WaitForFixedUpdate();
 
-        public static Camera main;
+        public static Camera1 main;
 
-        public Camera()
+        public Camera1()
         {
             main = this;
             renderer = new Texture2D(SoftRenderer.width, SoftRenderer.height);
@@ -133,43 +134,54 @@ namespace SoftRenderer
             var fv = obj.face_vertices;
             int len = fv.Length;
 
+            var data = new JobRenderObjectData();
+            data.points = new NativeArray<Vector3>(obj.vertices.Length, Allocator.Persistent);
+            data.points.CopyFrom(obj.vertices);
+
+            data.normals = new NativeArray<Vector3>(obj.vertex_normals.Length, Allocator.Persistent);
+            data.normals.CopyFrom(obj.vertex_normals);
+
+            data.uvs = new NativeArray<Vector2>(obj.texture_vertices.Length, Allocator.Persistent);
+            data.normals.CopyFrom(obj.texture_vertices);
+
+            data.triangleVertexData = new NativeArray<Vector3Int>(obj.face_vertices.Length, Allocator.Persistent);
+            for (int i = 0; i < obj.face_vertices.Length; i++)
+            {
+                data.triangleVertexData[i] = new Vector3Int(obj.face_vertices[i][0], obj.face_vertices[i][1], obj.face_vertices[i][2]);
+            }
+            data.triangleUVData = new NativeArray<Vector3Int>(obj.face_normal_vertices.Length, Allocator.Persistent);
+            for (int i = 0; i < obj.face_normal_vertices.Length; i++)
+            {
+                data.triangleUVData[i] = new Vector3Int(obj.face_normal_vertices[i][0], obj.face_normal_vertices[i][1], obj.face_normal_vertices[i][2]);
+            }
+
             if (SoftRenderer.Instance.shadow)
             {
+                NativeArray<VSOutBuf> vSOutBufs = new NativeArray<VSOutBuf>(len, Allocator.Temp);
+                VertexShadingJob vsJob = new VertexShadingJob();
+                vsJob.points = data.points;
+                vsJob.normals = data.normals;
+                vsJob.uvs = data.uvs;
+                vsJob.triangleVertexData = data.triangleVertexData;
+                vsJob.triangleUVData = data.triangleUVData;
+;
+                vsJob.result = vSOutBufs;
+                JobHandle vsHandle = vsJob.Schedule(len, 3);
 
-                for (int i = 0; i < len; i++)
-                {
-                    Vector4[] screen_coords = new Vector4[3];
-                    for (int j = 0; j < 3; j++)
-                    {
-                        screen_coords[j] = obj.shadowShader.vertex(i, j);
-                    }
-
-                    MyGL.Triangle(screen_coords, obj.shadowShader, this.renderer, ref depth);
-                }
             }
             if (SoftRenderer.Instance.model)
             {
-                for (int i = 0; i < len; i++)
-                {
-                    Vector4[] screen_coords = new Vector4[3];
-                    for (int j = 0; j < 3; j++)
-                    {
-                        screen_coords[j] = obj.shader.vertex(i, j);
-                    }
 
-                    MyGL.Triangle(screen_coords, obj.shader, this.renderer, ref zBuffer);
-                }
             }
             renderer.Apply();
             Debug.Log("finish");
         }
-
         public void Start()
         {
             int width = SoftRenderer.width;
             int height = SoftRenderer.height;
-            zBuffer = new float[width * height];
-            depth = new float[width * height];
+            zBuffer = new NativeArray<float>(width * height, Allocator.Persistent);
+            depth = new NativeArray<float>(width * height, Allocator.Persistent);
             for (int i = 0; i < width; i++)
             {
                 for (int j = 0; j < height; j++)

@@ -4,14 +4,36 @@ using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using UnityEngine;
+using Unity.Burst;
+using Unity.Collections;
+using Unity.Jobs;
 
 namespace SoftRenderer
 {
+    internal struct shader_a2v
+    {
+        public int vertex_index;
+        public Vector4 world_pos;
+        public Vector3 normal;
+        public Vector3 tangent;
+        public Vector4 texcoord;
+        public Vector4 texcoord1;
+        public Vector4 texcoord2;
+        public Vector4 texcoord3;
+    }
+
+    internal struct shader_v2f
+    {
+        public Vector4 position;
+        public Color color;
+    }
+
+
     public class MyGL
     {
         //public static Texture2D output;
 
-        public static void Triangle(Vector3[] points, IShader shader, Texture2D output, ref float[] zbuffer)
+        public static void Triangle(Vector4[] points, IShader shader, Texture2D output, ref float[] zbuffer)
         {
             Vector2 boxMin = new Vector2(float.MaxValue, float.MaxValue);
             Vector2 boxMax = new Vector2();
@@ -20,8 +42,8 @@ namespace SoftRenderer
             {
                 for (int j = 0; j < 2; j++)
                 {
-                    boxMin[j] = Math.Max(0f, (int)Math.Min(boxMin[j], points[i][j]));
-                    boxMax[j] = Math.Min((int)clamp[j], (int)Math.Max(boxMax[j], points[i][j]));
+                    boxMin[j] = Math.Max(0f, (int)Math.Min(boxMin[j], points[i][j] / points[i][3]));
+                    boxMax[j] = Math.Min((int)clamp[j], (int)Math.Max(boxMax[j], points[i][j] / points[i][3]));
                 }
             }
 
@@ -30,21 +52,27 @@ namespace SoftRenderer
             {
                 for (p.y = boxMin.y; p.y <= boxMax.y; p.y++)
                 {
-
-                    var barycentric = Barycentric(points[0], points[1], points[2], p);
-
+                    //这个为经过MVP转换后再处理的质心坐标
+                    var barycentric = Barycentric(points[0] / points[0][3], points[1] / points[1][3], points[2] / points[2][3], p);
                     if (barycentric.x < 0 || barycentric.y < 0 || barycentric.z < 0) { continue; }
 
-                    p.z = 0;
+                    //透视矫正 - 质心坐标矫正
+                    Vector3 barycentric_revised = new Vector3();
                     for (int i = 0; i < 3; i++)
                     {
-                        p.z += points[i].z * barycentric[i];
+                        barycentric_revised[i] = barycentric[i] / points[i][3];
                     }
+                    float z_n = 1f / (barycentric_revised[0] + barycentric_revised[1] + barycentric_revised[2]);
+                    for (int i = 0; i < 3; i++)
+                    {
+                        barycentric_revised[i] *= z_n;
+                    }
+
                     var zbufferIndex = (int)p.y * output.width + (int)p.x;
                     if (zbuffer[zbufferIndex] <= p.z)
                     {
                         zbuffer[zbufferIndex] = p.z;
-                        bool discard = shader.fragment(barycentric, out var color, output);
+                        bool discard = shader.fragment(barycentric_revised, out var color, output);
                         if (!discard)
                         {
                             DrawPixel(output, (int)p.x, (int)p.y, color);
@@ -55,7 +83,7 @@ namespace SoftRenderer
             }
         }
 
-        private static Vector3 Barycentric(Vector3 pos0, Vector3 pos1, Vector3 pos2, Vector3 p)
+        public static Vector3 Barycentric(Vector3 pos0, Vector3 pos1, Vector3 pos2, Vector3 p)
         {
             Vector3[] s = new Vector3[3];
             for (int i = 0; i <= 2; i++)

@@ -15,8 +15,6 @@ namespace SoftRenderer
         public Matrix4x4 varying_tri;
         public Matrix4x4 ndc_tri;
 
-        float closestZ = float.MaxValue;
-
         private Camera cam;
 
         public DepthShader(Model obj, Camera cam)
@@ -29,7 +27,7 @@ namespace SoftRenderer
             varying_uv.SetColumn(vertexIndex, obj.uv(faceIndex, vertexIndex));
             Vector3 vertex = obj.vertex(faceIndex, vertexIndex);
             Vector4 gl_Vertex = cam.Viewport * cam.ProjectionForLight * cam.ModelViewForLight * new Vector4(vertex.x, vertex.y, vertex.z, 1);
-            gl_Vertex /= gl_Vertex[3];
+            //gl_Vertex /= gl_Vertex[3];
             varying_tri.SetColumn(vertexIndex, gl_Vertex);
             return gl_Vertex; // transform it to screen coordinates
         }
